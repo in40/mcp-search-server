@@ -5,11 +5,11 @@ MCP-compliant server providing web search (Yandex Search API) and URL fetching c
 ## Quick Start
 
 ```bash
-# Install
-pip install mcp-search-server
+# Install from GitHub
+pip install git+https://github.com/in40/mcp-search-server.git
 
 # With Playwright support (for JS-heavy sites):
-pip install "mcp-search-server[playwright]"
+pip install "mcp-search-server[playwright] @ git+https://github.com/in40/mcp-search-server.git"
 playwright install --with-deps chromium
 ```
 
@@ -161,15 +161,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev libxslt1-dev libgomp1 curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN pip install --no-cache-dir \
+    "mcp-search-server[playwright] @ git+https://github.com/in40/mcp-search-server.git" \
     && python -m playwright install --with-deps chromium
 
-COPY src/mcp_search_server/ /app/mcp_search_server/
 COPY api_keys.json .
 ENV API_KEYS_PATH=/app/api_keys.json
 
-CMD ["python", "-m", "mcp_search_server"]
+CMD ["mcp-search-server"]
 ```
 
 ## Development
