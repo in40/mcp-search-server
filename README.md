@@ -16,42 +16,51 @@ pip install git+https://github.com/in40/mcp-search-server.git
 
 #### Download
 
-Download from the [GitHub Releases page](https://github.com/in40/mcp-search-server/releases):
+Two bundles available on the [GitHub Releases page](https://github.com/in40/mcp-search-server/releases):
+
+| Bundle | Size | Playwright | Chromium |
+|--------|------|------------|----------|
+| `mcp-search-server-offline.tar.gz` | 21 MB | no | no |
+| `mcp-search-server-offline-full.tar.gz` | 330 MB | yes | yes |
 
 ```bash
-# Or via curl:
+# Light (no browser automation):
 curl -sL https://github.com/in40/mcp-search-server/releases/download/v2.2.0/mcp-search-server-offline.tar.gz -o mcp-search-server-offline.tar.gz
+
+# Full (with Playwright + Chromium for JS-heavy sites):
+curl -sL https://github.com/in40/mcp-search-server/releases/download/v2.2.0/mcp-search-server-offline-full.tar.gz -o mcp-search-server-offline-full.tar.gz
 ```
 
-To rebuild yourself (if you need a different Python version):
+To rebuild yourself (e.g. for a different Python version):
 
 ```bash
 git clone https://github.com/in40/mcp-search-server.git
 cd mcp-search-server
-bash scripts/build-offline.sh
+bash scripts/build-offline.sh                    # light (21 MB)
+bash scripts/build-offline.sh --with-playwright  # full (330 MB)
 ```
 
 #### Deploy (on the air-gapped machine)
 
+**Light bundle:**
 ```bash
 tar xzf mcp-search-server-offline.tar.gz
 cd offline
-bash install.sh                   # system-wide install
-# or in a virtual environment:
-bash install.sh --venv ./venv     # installs into ./venv
+bash install.sh --venv ./venv
+```
+
+**Full bundle (Playwright included):**
+```bash
+tar xzf mcp-search-server-offline-full.tar.gz
+cd offline
+bash install.sh --venv ./venv
+# install.sh automatically links bundled Chromium
 ```
 
 #### Manual install (without the script)
 
 ```bash
 pip install --no-index --find-links=./wheels ./wheels/mcp_search_server-*.whl
-```
-
-#### Playwright (optional, for JS-heavy sites)
-
-```bash
-pip install --no-index --find-links=./wheels playwright
-python -m playwright install chromium
 ```
 
 ### Configure & Run
