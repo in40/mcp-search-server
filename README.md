@@ -12,14 +12,38 @@ pip install git+https://github.com/in40/mcp-search-server.git
 
 ### Offline (air-gapped, no internet)
 
-Download the offline bundle from releases, then:
+**Prerequisites:** Python 3.10+, pip.
+
+#### Build the bundle (on a machine with internet, then transfer via USB)
+
+```bash
+git clone https://github.com/in40/mcp-search-server.git
+cd mcp-search-server
+bash scripts/build-offline.sh
+# produces: dist/mcp-search-server-offline.tar.gz (21 MB)
+```
+
+#### Deploy (on the air-gapped machine)
 
 ```bash
 tar xzf mcp-search-server-offline.tar.gz
 cd offline
-bash install.sh
-# or with virtual environment:
-bash install.sh --venv ./venv
+bash install.sh                   # system-wide install
+# or in a virtual environment:
+bash install.sh --venv ./venv     # installs into ./venv
+```
+
+#### Manual install (without the script)
+
+```bash
+pip install --no-index --find-links=./wheels ./wheels/mcp_search_server-*.whl
+```
+
+#### Playwright (optional, for JS-heavy sites)
+
+```bash
+pip install --no-index --find-links=./wheels playwright
+python -m playwright install chromium
 ```
 
 ### Configure & Run
@@ -29,13 +53,6 @@ export YANDEX_SEARCH_API_KEY="your-yandex-api-key"
 export YANDEX_FOLDER_ID="your-yandex-folder-id"
 export YANDEX_SEARCH_TYPE="SEARCH_TYPE_COM"  # or SEARCH_TYPE_RU
 mcp-search-server
-```
-
-For JS-heavy sites (Playwright/Chromium), also run:
-
-```bash
-pip install --no-index --find-links=./wheels playwright
-playwright install chromium
 ```
 
 ## Architecture
@@ -167,6 +184,8 @@ Returns two tools: `internet_search` and `fetch_url`.
 
 ## Docker
 
+### Online build
+
 ```dockerfile
 FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
@@ -178,7 +197,25 @@ ENV API_KEYS_PATH=/app/api_keys.json
 CMD ["mcp-search-server"]
 ```
 
+### Offline build (air-gapped)
+
+Copy `mcp-search-server-offline.tar.gz` to the build context, then:
+
+```dockerfile
+FROM python:3.11-slim
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+COPY mcp-search-server-offline.tar.gz /tmp/
+RUN cd /tmp && tar xzf mcp-search-server-offline.tar.gz && \
+    pip install --no-index --find-links=/tmp/offline/wheels /tmp/offline/wheels/mcp_search_server-*.whl && \
+    rm -rf /tmp/mcp-search-server-offline.tar.gz /tmp/offline
+COPY api_keys.json .
+ENV API_KEYS_PATH=/app/api_keys.json
+CMD ["mcp-search-server"]
+```
+
 ## Development
+
+### Online
 
 ```bash
 git clone https://github.com/in40/mcp-search-server.git
@@ -186,6 +223,16 @@ cd mcp-search-server
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[all]"
 playwright install --with-deps chromium
+mcp-search-server
+```
+
+### Offline
+
+```bash
+tar xzf mcp-search-server-offline.tar.gz
+cd offline
+bash install.sh --venv ./venv
+source ./venv/bin/activate
 mcp-search-server
 ```
 
