@@ -58,20 +58,20 @@ mcp-search-server
 ## Architecture
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                   mcp-search-server                     │
-│                                                        │
-│  Port 8090: MCP JSON-RPC 2.0  |  Port 8091: Dashboard  │
-│  ┌──────────────────────────┐ | ┌────────────────────┐ │
-│  │  tools/list              │ | │  GET /  (HTML UI)  │ │
-│  │  tools/call              │ | │  GET /health       │ │
-│  │    - internet_search     │ | │  GET /stats        │ │
-│  │    - fetch_url           │ | │  GET /logs         │ │
-│  └──────────────────────────┘ | │  POST /api/search  │ │
-│                                | │  POST /api/fetch   │ │
-│  In-memory log ring buffer     | └────────────────────┘ │
-│  (24h retention, auto-cleanup) |                        │
-└────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                     mcp-search-server                        │
+│                                                             │
+│  Port 8090              │  Port 8091                        │
+│  MCP JSON-RPC 2.0       │  REST API           Dashboard     │
+│  ┌───────────────────┐  │  ┌──────────────┐  ┌────────────┐ │
+│  │ tools/list         │  │  │ POST /search │  │ GET /      │ │
+│  │ tools/call         │  │  │ POST /fetch  │  │  (HTML UI) │ │
+│  │  - internet_search │  │  │ GET /health  │  │            │ │
+│  │  - fetch_url       │  │  │ GET /stats   │  │            │ │
+│  └───────────────────┘  │  │ GET /logs     │  └────────────┘ │
+│                         │  └──────────────┘                  │
+│  In-memory log ring buffer (24h retention)                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Features
