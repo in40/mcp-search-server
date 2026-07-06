@@ -14,13 +14,21 @@ pip install git+https://github.com/in40/mcp-search-server.git
 
 **Prerequisites:** Python 3.10+, pip.
 
-#### Build the bundle (on a machine with internet, then transfer via USB)
+#### Download
+
+Download from the [GitHub Releases page](https://github.com/in40/mcp-search-server/releases):
+
+```bash
+# Or via curl:
+curl -sL https://github.com/in40/mcp-search-server/releases/download/v2.2.0/mcp-search-server-offline.tar.gz -o mcp-search-server-offline.tar.gz
+```
+
+To rebuild yourself (if you need a different Python version):
 
 ```bash
 git clone https://github.com/in40/mcp-search-server.git
 cd mcp-search-server
 bash scripts/build-offline.sh
-# produces: dist/mcp-search-server-offline.tar.gz (21 MB)
 ```
 
 #### Deploy (on the air-gapped machine)
