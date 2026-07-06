@@ -5,24 +5,23 @@ MCP-compliant server providing web search (Yandex Search API) and URL fetching c
 ## Quick Start
 
 ```bash
-# Install from GitHub
+# One command, everything included:
 pip install git+https://github.com/in40/mcp-search-server.git
 
-# With Playwright support (for JS-heavy sites):
-pip install "mcp-search-server[playwright] @ git+https://github.com/in40/mcp-search-server.git"
-playwright install --with-deps chromium
-```
-
-```bash
-# Configure
+# Configure (get keys from Yandex Cloud Console):
 export YANDEX_SEARCH_API_KEY="your-yandex-api-key"
 export YANDEX_FOLDER_ID="your-yandex-folder-id"
-export YANDEX_SEARCH_TYPE="SEARCH_TYPE_COM"  # or SEARCH_TYPE_RU for Russian results
+export YANDEX_SEARCH_TYPE="SEARCH_TYPE_COM"  # or SEARCH_TYPE_RU
+
+# Run:
+mcp-search-server
 ```
 
+For JS-heavy sites (Playwright/Chromium fallback), also run:
+
 ```bash
-# Run
-mcp-search-server
+pip install "mcp-search-server[playwright] @ git+https://github.com/in40/mcp-search-server.git"
+playwright install --with-deps chromium
 ```
 
 ## Architecture
@@ -156,18 +155,12 @@ Returns two tools: `internet_search` and `fetch_url`.
 
 ```dockerfile
 FROM python:3.11-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libxml2-dev libxslt1-dev libgomp1 curl \
-    && rm -rf /var/lib/apt/lists/*
-
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir \
     "mcp-search-server[playwright] @ git+https://github.com/in40/mcp-search-server.git" \
     && python -m playwright install --with-deps chromium
-
 COPY api_keys.json .
 ENV API_KEYS_PATH=/app/api_keys.json
-
 CMD ["mcp-search-server"]
 ```
 
