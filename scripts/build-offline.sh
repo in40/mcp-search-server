@@ -44,10 +44,12 @@ if [ "$WITH_PLAYWRIGHT" = true ]; then
     echo "[3/4] Installing Playwright + Chromium..."
     python3 -m pip download --only-binary=:all: --dest="$WHEELS_DIR" playwright
     export PLAYWRIGHT_BROWSERS_PATH="$BUNDLE_DIR/browsers"
-    # Install only what's needed for headless page rendering
     python3 -m playwright install chromium 2>&1 | grep -v '^|'
-    # Remove ffmpeg (not needed - only used for video recording)
+    # Remove unnecessary components:
+    #   ffmpeg - only used for video recording, not needed
+    #   WidevineCdm - proprietary DRM, not needed for headless fetching
     rm -rf "$BUNDLE_DIR/browsers/ffmpeg-"*
+    find "$BUNDLE_DIR/browsers" -name "WidevineCdm" -type d -exec rm -rf {} + 2>/dev/null || true
     BROWSER_SIZE=$(du -sh "$BUNDLE_DIR/browsers" | cut -f1)
     echo "       Browsers size: $BROWSER_SIZE"
 else
@@ -59,6 +61,7 @@ echo "[4/4] Creating install script..."
 cp "$REPO_DIR/api_keys.json.example" "$BUNDLE_DIR/"
 cp "$REPO_DIR/requirements.txt" "$BUNDLE_DIR/"
 cp "$REPO_DIR/README.md" "$BUNDLE_DIR/"
+cp "$REPO_DIR/NOTICE" "$BUNDLE_DIR/"
 
 cat > "$BUNDLE_DIR/install.sh" << 'INSTALL'
 #!/usr/bin/env bash
