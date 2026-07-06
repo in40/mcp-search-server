@@ -4,24 +4,38 @@ MCP-compliant server providing web search (Yandex Search API) and URL fetching c
 
 ## Quick Start
 
-```bash
-# One command, everything included:
-pip install git+https://github.com/in40/mcp-search-server.git
+### Online (with internet)
 
-# Configure (get keys from Yandex Cloud Console):
+```bash
+pip install git+https://github.com/in40/mcp-search-server.git
+```
+
+### Offline (air-gapped, no internet)
+
+Download the offline bundle from releases, then:
+
+```bash
+tar xzf mcp-search-server-offline.tar.gz
+cd offline
+bash install.sh
+# or with virtual environment:
+bash install.sh --venv ./venv
+```
+
+### Configure & Run
+
+```bash
 export YANDEX_SEARCH_API_KEY="your-yandex-api-key"
 export YANDEX_FOLDER_ID="your-yandex-folder-id"
 export YANDEX_SEARCH_TYPE="SEARCH_TYPE_COM"  # or SEARCH_TYPE_RU
-
-# Run:
 mcp-search-server
 ```
 
-For JS-heavy sites (Playwright/Chromium fallback), also run:
+For JS-heavy sites (Playwright/Chromium), also run:
 
 ```bash
-pip install "mcp-search-server[playwright] @ git+https://github.com/in40/mcp-search-server.git"
-playwright install --with-deps chromium
+pip install --no-index --find-links=./wheels playwright
+playwright install chromium
 ```
 
 ## Architecture
