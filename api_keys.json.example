@@ -1,0 +1,6 @@
+{
+    "keys": {
+        "your-api-key-here": "read-write",
+        "another-key-for-team": "read-write"
+    }
+}

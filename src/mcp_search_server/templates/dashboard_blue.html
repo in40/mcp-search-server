@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Search Server Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #00d4ff; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 0; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 24px; border: none; background: #16213e; color: #888; cursor: pointer; font-size: 1em; border-radius: 8px 8px 0 0; transition: all .2s; }
+        .tab-btn:hover { color: #eee; background: #1a2a4e; }
+        .tab-btn.active { background: #0f3460; color: #00d4ff; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: #16213e; padding: 20px; border-radius: 10px; border-left: 4px solid #00d4ff; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #00d4ff; }
+        .stat-label { color: #888; margin-top: 5px; }
+        .logs { background: #16213e; border-radius: 10px; overflow: hidden; }
+        .log-header { display: grid; grid-template-columns: 80px 180px 150px 1fr 100px; padding: 15px; background: #0f3460; font-weight: bold; }
+        .log-row { display: grid; grid-template-columns: 80px 180px 150px 1fr 100px; padding: 12px 15px; border-bottom: 1px solid #1a1a2e; }
+        .log-row:hover { background: #1a1a2e; }
+        .log-id { color: #888; }
+        .log-time { color: #aaa; font-size: 0.9em; }
+        .log-type { padding: 3px 8px; border-radius: 4px; font-size: 0.85em; display: inline-block; }
+        .type-search { background: #0066cc; color: white; }
+        .type-fetch { background: #009966; color: white; }
+        .log-client { color: #888; }
+        .log-details { color: #ccc; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .log-status { font-weight: bold; }
+        .status-ok { color: #00ff88; }
+        .status-error { color: #ff4444; }
+        .filters { margin-bottom: 20px; display: flex; gap: 10px; }
+        .filters input, .filters select { padding: 10px; border: none; border-radius: 5px; background: #16213e; color: #eee; }
+        .filters button { padding: 10px 20px; border: none; border-radius: 5px; background: #00d4ff; color: #1a1a2e; cursor: pointer; font-weight: bold; }
+        .filters button:hover { background: #00b8e6; }
+        .ylog-header { display: grid; grid-template-columns: 60px 160px 1.5fr 100px 70px 1fr; padding: 15px; background: #0f3460; font-weight: bold; gap: 8px; }
+        .ylog-row { display: grid; grid-template-columns: 60px 160px 1.5fr 100px 70px 1fr; padding: 12px 15px; border-bottom: 1px solid #1a1a2e; gap: 8px; }
+        .ylog-row:hover { background: #1a1a2e; }
+        .ylog-row.error-row { border-left: 3px solid #ff4444; }
+        .ylog-row.ok-row { border-left: 3px solid #00ff88; }
+        .ylog-query { color: #ccc; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ylog-ms { color: #aaa; font-size: 0.9em; text-align: right; }
+        .ylog-count { color: #aaa; font-size: 0.9em; text-align: center; }
+        .ylog-error { color: #ff6b6b; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .detail-section { margin-bottom: 16px; }
+        .detail-section h3 { color: #00d4ff; margin-bottom: 8px; font-size: 1em; }
+        .detail-section .key { color: #888; }
+        .detail-section .val { color: #eee; }
+        .detail-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; }
+        .error-detail { background: #2a1a1a; border: 1px solid #ff4444; border-radius: 6px; padding: 12px; margin-top: 8px; }
+        .body-preview { background: #0f3460; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; margin-top: 8px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #16213e; padding: 30px; border-radius: 10px; max-width: 800px; max-height: 80vh; overflow-y: auto; width: 90%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; color: #888; font-size: 2em; cursor: pointer; }
+        pre { background: #0f3460; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MCP Search Server Dashboard</h1>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('logs')" id="tab-btn-logs">Logs</button>
+            <button class="tab-btn" onclick="switchTab('yandex')" id="tab-btn-yandex">Yandex</button>
+        </div>
+        
+        <div id="tab-logs" class="tab-content active">
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-requests">-</div>
+                    <div class="stat-label">Total Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="requests-hour">-</div>
+                    <div class="stat-label">Last Hour</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="search-count">-</div>
+                    <div class="stat-label">Search Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="fetch-count">-</div>
+                    <div class="stat-label">Fetch Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="error-count">-</div>
+                    <div class="stat-label">Errors</div>
+                </div>
+            </div>
+            
+            <div class="filters">
+                <select id="type-filter">
+                    <option value="">All Types</option>
+                    <option value="search">Search</option>
+                    <option value="fetch">Fetch</option>
+                </select>
+                <input type="number" id="limit-input" placeholder="Limit" value="100" min="1" max="1000">
+                <button onclick="loadLogs()">Refresh</button>
+            </div>
+            
+            <div class="logs">
+                <div class="log-header">
+                    <div>ID</div>
+                    <div>Time</div>
+                    <div>Type</div>
+                    <div>Details</div>
+                    <div>Status</div>
+                </div>
+                <div id="log-rows"></div>
+            </div>
+        </div>
+        
+        <div id="tab-yandex" class="tab-content">
+            <div class="filters">
+                <input type="number" id="ylimit-input" placeholder="Limit" value="100" min="1" max="1000">
+                <button onclick="loadYandexLogs()">Refresh</button>
+            </div>
+            <div class="logs">
+                <div class="ylog-header">
+                    <div>ID</div>
+                    <div>Time</div>
+                    <div>Query</div>
+                    <div>Yandex ms</div>
+                    <div>Results</div>
+                    <div>Status / Error</div>
+                </div>
+                <div id="yandex-rows"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Log Details</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+    
+    <script>
+        let activeTab = 'logs';
+        let yandexData = [];
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-btn-' + tab).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'yandex') loadYandexLogs();
+            if (tab === 'logs') { loadStats(); loadLogs(); }
+        }
+
+        async function loadStats() {
+            const res = await fetch('stats');
+            const stats = await res.json();
+            document.getElementById('total-requests').textContent = stats.total_requests;
+            document.getElementById('requests-hour').textContent = stats.requests_last_hour;
+            document.getElementById('search-count').textContent = stats.search_requests;
+            document.getElementById('fetch-count').textContent = stats.fetch_requests;
+            document.getElementById('error-count').textContent = stats.errors;
+        }
+        
+        async function loadLogs() {
+            const type = document.getElementById('type-filter').value;
+            const limit = document.getElementById('limit-input').value;
+            const params = new URLSearchParams({ limit });
+            if (type) params.append('type', type);
+            
+            const res = await fetch('logs?' + params);
+            const data = await res.json();
+            
+            const rows = document.getElementById('log-rows');
+            rows.innerHTML = data.logs.map(log => `
+                <div class="log-row" onclick="showDetails(${log.id})">
+                    <div class="log-id">#${log.id}</div>
+                    <div class="log-time">${new Date(log.timestamp).toLocaleString()}</div>
+                    <div><span class="log-type type-${log.type}">${log.type}</span></div>
+                    <div class="log-details">${log.type === 'search' ? 'Query: ' + (log.request.query || '').substring(0, 50) : 'URL: ' + (log.request.url || '').substring(0, 50)}</div>
+                    <div class="log-status ${log.error ? 'status-error' : 'status-ok'}">${log.error ? 'Error' : (log.response?.duration_ms || '-') + 'ms'}</div>
+                </div>
+            `).join('');
+        }
+
+        async function loadYandexLogs() {
+            const limit = document.getElementById('ylimit-input').value;
+            const res = await fetch('logs?type=search&limit=' + limit);
+            const data = await res.json();
+            yandexData = data.logs;
+            
+            const rows = document.getElementById('yandex-rows');
+            rows.innerHTML = data.logs.map(log => {
+                const resp = log.response || {};
+                const isError = !!log.error;
+                const yms = resp.yandex_ms != null ? resp.yandex_ms + 'ms' : '-';
+                const results = resp.results_count != null ? resp.results_count : '-';
+                const errorText = log.error ? escapeHtml(log.error).substring(0, 80) : 'OK';
+                return `
+                    <div class="ylog-row ${isError ? 'error-row' : 'ok-row'}" onclick="showYandexDetail(${log.id})">
+                        <div class="log-id">#${log.id}</div>
+                        <div class="log-time">${new Date(log.timestamp).toLocaleString()}</div>
+                        <div class="ylog-query">${escapeHtml((log.request.query || '').substring(0, 60))}</div>
+                        <div class="ylog-ms">${yms}</div>
+                        <div class="ylog-count">${isError ? 'err' : results}</div>
+                        <div class="ylog-error">${errorText}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function showYandexDetail(id) {
+            const log = yandexData.find(l => l.id === id);
+            if (!log) return;
+            const resp = log.response || {};
+            const req = log.request || {};
+            const isError = !!log.error;
+            let html = '<div class="detail-section"><h3>Request</h3><div class="detail-grid">';
+            html += '<span class="key">Query:</span><span class="val">' + escapeHtml(req.query || '') + '</span>';
+            html += '<span class="key">Count:</span><span class="val">' + (req.count || '-') + '</span>';
+            html += '<span class="key">Time:</span><span class="val">' + new Date(log.timestamp).toLocaleString() + '</span>';
+            html += '</div></div>';
+            
+            html += '<div class="detail-section"><h3>Timing</h3><div class="detail-grid">';
+            html += '<span class="key">Yandex API:</span><span class="val">' + (resp.yandex_ms != null ? resp.yandex_ms + 'ms' : '-') + '</span>';
+            if (resp.duration_ms != null) html += '<span class="key">Total:</span><span class="val">' + resp.duration_ms + 'ms</span>';
+            if (resp.exception_type) html += '<span class="key">Exception:</span><span class="val" style="color:#ff6b6b">' + resp.exception_type + '</span>';
+            html += '</div></div>';
+
+            if (isError) {
+                html += '<div class="detail-section error-detail"><h3 style="color:#ff6b6b">Error</h3><div class="detail-grid">';
+                html += '<span class="key">Message:</span><span class="val">' + escapeHtml(log.error || '') + '</span>';
+                if (resp.status_code) html += '<span class="key">HTTP Status:</span><span class="val">' + resp.status_code + '</span>';
+                html += '</div>';
+                if (resp.body_preview) {
+                    html += '<div class="body-preview">' + escapeHtml(resp.body_preview) + '</div>';
+                }
+                html += '</div>';
+            }
+
+            if (resp.results && resp.results.length > 0) {
+                html += '<div class="detail-section"><h3>Results (' + resp.results.length + ')</h3>';
+                resp.results.forEach(r => {
+                    html += '<div style="padding:4px 0;border-bottom:1px solid #1a1a2e">';
+                    if (r.title) html += '<div style="color:#00d4ff">' + escapeHtml(r.title.substring(0, 100)) + '</div>';
+                    if (r.url) html += '<div style="color:#888;font-size:0.85em">' + escapeHtml(r.url.substring(0, 120)) + '</div>';
+                    if (r.description) html += '<div style="color:#aaa;font-size:0.85em">' + escapeHtml(r.description.substring(0, 200)) + '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+            
+            document.getElementById('modal-title').textContent = 'Yandex Search #' + log.id;
+            document.getElementById('modal-body').innerHTML = html;
+            document.getElementById('modal').style.display = 'block';
+        }
+        
+        function showDetails(id) {
+            fetch('logs?limit=1000').then(r => r.json()).then(data => {
+                const log = data.logs.find(l => l.id === id);
+                if (log) {
+                    document.getElementById('modal-title').textContent = 'Log #' + log.id;
+                    document.getElementById('modal-body').innerHTML = '<pre>' + escapeHtml(JSON.stringify(log, null, 2)) + '</pre>';
+                    document.getElementById('modal').style.display = 'block';
+                }
+            });
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+        
+        setInterval(() => {
+            if (activeTab === 'logs') { loadStats(); loadLogs(); }
+            else { loadYandexLogs(); }
+        }, 5000);
+        loadStats();
+        loadLogs();
+    </script>
+</body>
+</html>

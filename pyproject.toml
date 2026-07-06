@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-search-server"
+version = "2.2.0"
+description = "MCP-compliant search server with Yandex Search API, URL fetching, and monitoring dashboard"
+readme = "README.md"
+license = {text = "Apache 2.0"}
+requires-python = ">=3.10"
+keywords = ["mcp", "search", "yandex", "trafilatura", "playwright", "ai-agent"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "requests>=2.25.0",
+    "aiohttp>=3.9.0",
+    "trafilatura>=1.6.0",
+    "python-dateutil>=2.8.0",
+    "lxml-html-clean>=0.4.0",
+]
+
+[project.optional-dependencies]
+playwright = ["playwright>=1.60.0"]
+all = ["mcp-search-server[playwright]"]
+
+[project.urls]
+Repository = "https://github.com/in40/mcp-search-server"
+Issues = "https://github.com/in40/mcp-search-server/issues"
+
+[project.scripts]
+mcp-search-server = "mcp_search_server.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mcp_search_server = ["templates/*.html"]

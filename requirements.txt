@@ -1,0 +1,9 @@
+# Core
+requests>=2.25.0
+aiohttp>=3.9.0
+trafilatura>=1.6.0
+python-dateutil>=2.8.0
+lxml-html-clean>=0.4.0
+
+# Optional: Playwright for JS-heavy sites
+# playwright>=1.60.0
