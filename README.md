@@ -216,15 +216,38 @@ CMD ["mcp-search-server"]
 
 ### Offline build (air-gapped)
 
-Copy `mcp-search-server-offline.tar.gz` to the build context, then:
+Copy `mcp-search-server-offline.tar.gz` to the build context, then choose your base image:
+
+**Debian/Ubuntu-based (standard):**
 
 ```dockerfile
 FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 COPY mcp-search-server-offline.tar.gz /tmp/
 RUN cd /tmp && tar xzf mcp-search-server-offline.tar.gz && \
-    pip install --no-index --find-links=/tmp/offline/wheels /tmp/offline/wheels/mcp_search_server-*.whl && \
-    rm -rf /tmp/mcp-search-server-offline.tar.gz /tmp/offline
+    pip install --no-index --find-links=/tmp/wheels /tmp/wheels/mcp_search_server-*.whl && \
+    rm -rf /tmp/mcp-search-server-offline.tar.gz /tmp/wheels /tmp/install.sh
+COPY api_keys.json .
+ENV API_KEYS_PATH=/app/api_keys.json
+CMD ["mcp-search-server"]
+```
+
+**Astra Linux (certified Russian OS):**
+
+```dockerfile
+FROM registry.astralinux.ru/library/astra/ubi18:1.8.6
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    python3 \
+    python3-pip \
+    python3.11-venv \
+    && rm -rf /var/lib/apt/lists/*
+COPY mcp-search-server-offline.tar.gz /tmp/
+RUN cd /tmp && tar xzf mcp-search-server-offline.tar.gz && \
+    python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-index --find-links=/tmp/wheels /tmp/wheels/mcp_search_server-*.whl && \
+    rm -rf /tmp/mcp-search-server-offline.tar.gz /tmp/wheels /tmp/install.sh
 COPY api_keys.json .
 ENV API_KEYS_PATH=/app/api_keys.json
 CMD ["mcp-search-server"]

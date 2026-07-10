@@ -1,0 +1,31 @@
+FROM registry.astralinux.ru/library/astra/ubi18:1.8.6 AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    python3 \
+    python3-pip \
+    python3.11-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Клонируем исходники
+RUN git clone https://github.com/in40/mcp-search-server.git /repo
+
+WORKDIR /repo
+
+# Собираем офлайн-бандл
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install --upgrade pip wheel && \
+    /venv/bin/pip install . && \
+    mkdir -p /output/wheels && \
+    /venv/bin/pip download --only-binary=:all: --dest=/output/wheels . && \
+    /venv/bin/pip wheel --no-deps . -w /output/wheels
+
+RUN printf '#!/bin/bash\nset -e\nVENV_DIR="${1:-./venv}"\npython3 -m venv "$VENV_DIR"\n"$VENV_DIR/bin/pip" install --no-index --find-links="$(dirname "$0")/wheels" "$(dirname "$0")/wheels/mcp_search_server-"*.whl\necho "Done. Activate: source $VENV_DIR/bin/activate"\n' > /output/install.sh && chmod +x /output/install.sh
+
+RUN cd /output && \
+    tar czf /repo/mcp-search-server-offline.tar.gz . && \
+    rm -rf /output /venv /repo/.git
+
+# Экспортируем результат
+FROM scratch AS artifact
+COPY --from=builder /repo/mcp-search-server-offline.tar.gz /
